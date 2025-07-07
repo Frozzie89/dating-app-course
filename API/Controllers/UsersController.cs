@@ -1,25 +1,23 @@
-using System;
-using API.Data;
 using API.Entities;
+using API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-[ApiController]
-[Route("api/[Controller]")] // Same as '/api/users'
-public class UsersController(DataContext context) : ControllerBase
+[Authorize]
+public class UsersController(IMemberRepository memberRepository) : BaseApiController
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<Member>>> GetUsers()
     {
-        return await context.Users.ToListAsync();
+        return Ok(await memberRepository.GetMembersAsync());
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<AppUser>> GetUser(int id)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Member>> GetUser(string id)
     {
-        var user = await context.Users.FindAsync(id);
+        var user = await memberRepository.GetMemberByIdAsync(id);
 
         if (user == null)
         {
@@ -27,5 +25,11 @@ public class UsersController(DataContext context) : ControllerBase
         }
 
         return user;
+    }
+
+    [HttpGet("{id}/photos")]
+    public async Task<ActionResult<IReadOnlyList<Photo>>> GetUserPhotos(string id)
+    {
+        return Ok(await memberRepository.GetPhotosForMemberAsync(id));
     }
 }
